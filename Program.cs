@@ -1,8 +1,15 @@
-class Program
+using book_collection.Context;
+using Microsoft.EntityFrameworkCore;
+
+public class Program
 {
-  static void Main(string[] args)
+  public static void Main(string[] args)
   {
     var builder = WebApplication.CreateBuilder(args);
+
+    builder.Services.AddDbContext<AppDbContext>((DbContextOptionsBuilder options) => {
+        options.UseMySql(builder.Configuration["ConnectionStrings"], new MySqlServerVersion(new Version()));
+        });
 
     // Add services to the container.
 
@@ -27,5 +34,6 @@ class Program
     app.MapControllers();
 
     app.Run();
+
   }
 }
