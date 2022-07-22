@@ -9,6 +9,12 @@ namespace book_collection.Models
   [Table("publishing_companies")]
   public class PublishingCompanie
   {
+    public PublishingCompanie()
+    {
+      Books = new Collection<Book>();
+      Authors = new Collection<Author>();
+    }
+
     [Key]
     public int id { get; set; }
 
@@ -28,6 +34,11 @@ namespace book_collection.Models
     public string cep { get; set; }
 
     [Required]
-    public int profile_id { get; set; }
+    [Column("profile_id")]
+    public int ProfileId { get; set; }
+
+    public ICollection<Book> Books { get; set; }
+
+    public ICollection<Author> Authors { get; set; }
   }
 }
