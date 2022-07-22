@@ -23,11 +23,11 @@ namespace book_collection.Models
     public string phone { get; set; }
 
     [Required]
-    public byte[] image { get; set; }
+    [Column("publishing_companies_id")]
+    public int PublishingCompanieid { get; set; }
 
-    [Required]
-    public int publishing_id { get; set; }
+    public ICollection<BookAuthor> BookAuthors { get; set; }
 
-    public ICollection<Book> Books { get; set; }
+    public ICollection<ImageAuthor> ImageAuthors { get; set; }
   }
 }

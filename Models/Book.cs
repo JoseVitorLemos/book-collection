@@ -21,13 +21,11 @@ namespace book_collection.Models
     [Required]
     [MaxLength(80)]
     public DateTime release_date { get; set; }
-
+    
     [Required]
-    public byte[] image { get; set; }
+    [Column("publishing_companies_id")]
+    public int PublishingCompanieId { get; set; }
 
-    [Required]
-    public int publishing_id { get; set; }
-
-    public ICollection<Author> Authors { get; set; }
+    public ICollection<BookAuthor> BookAuthors { get; set; }
   }
 }
