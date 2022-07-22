@@ -9,12 +9,12 @@ namespace book_collection.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class ProfilesController : ControllerBase
+public class ProfileController : ControllerBase
 {
   private readonly AppDbContext _context;
   private readonly IWebHostEnvironment _webHostEnvironment;
 
-  public ProfilesController(AppDbContext context, IWebHostEnvironment webHostEnvironment)
+  public ProfileController(AppDbContext context, IWebHostEnvironment webHostEnvironment)
   {
     this._context = context;
     this._webHostEnvironment = webHostEnvironment;
@@ -31,6 +31,11 @@ public class ProfilesController : ControllerBase
   {
     try 
     {
+      if (profile.password != profile.passwordConfirmation) 
+      {
+        return BadRequest("password and passwordConfirmation are not the same");
+      }
+
       var profileData = new Profile {
         cpf = profile.cpf,
         name = profile.name,
@@ -50,14 +55,17 @@ public class ProfilesController : ControllerBase
     }
   }
 
-  [HttpPost("image")]
-  public async Task<ActionResult> PostImageProfile([FromForm] ImageProfileDto imageProfileDto)
+  [HttpPost("image/{id}")]
+  public async Task<ActionResult> PostImageProfile(int id, [FromForm] ImageProfileDto imageProfileDto)
   {
     try 
     {
-      if (imageProfileDto.image != null)
+      var images = await _context.ImageProfiles.AsNoTracking().ToListAsync();
+
+      if (images.Count() != 0) return BadRequest("profile image can only one");
+
+      if (imageProfileDto.image != null && images.Count() == 0)
       {
-        string folderPath = Path.Combine(_webHostEnvironment.ContentRootPath, "Images");
         var ms = new MemoryStream();
         await imageProfileDto.image.CopyToAsync(ms);
         var fileBytes = ms.ToArray();
@@ -67,9 +75,12 @@ public class ProfilesController : ControllerBase
           image_byte = fileBytes,
           ProfileId = imageProfileDto.ProfileId
         };
-
         _context.ImageProfiles.Add(imageProfile);
         _context.SaveChanges();
+      }
+      else
+      {
+        return BadRequest();
       }
       return Ok("Saved success");
     }

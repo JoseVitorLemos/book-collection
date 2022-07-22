@@ -23,5 +23,9 @@ namespace book_collection.Dto
     [Required]
     [MaxLength(80)]
     public string password { get; set; }
+
+    [Required]
+    [MaxLength(80)]
+    public string passwordConfirmation { get; set; }
   }
 }
