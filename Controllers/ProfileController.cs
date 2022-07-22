@@ -49,4 +49,34 @@ public class ProfilesController : ControllerBase
       return StatusCode(StatusCodes.Status500InternalServerError, "error when registering a new profile");
     }
   }
+
+  [HttpPost("image")]
+  public async Task<ActionResult> PostImageProfile([FromForm] ImageProfileDto imageProfileDto)
+  {
+    try 
+    {
+      if (imageProfileDto.image != null)
+      {
+        string folderPath = Path.Combine(_webHostEnvironment.ContentRootPath, "Images");
+        var ms = new MemoryStream();
+        await imageProfileDto.image.CopyToAsync(ms);
+        var fileBytes = ms.ToArray();
+       
+        var imageProfile = new ImageProfile {
+          title = imageProfileDto.image.FileName,
+          image_byte = fileBytes,
+          ProfileId = imageProfileDto.ProfileId
+        };
+
+        _context.ImageProfiles.Add(imageProfile);
+        _context.SaveChanges();
+      }
+      return Ok("Saved success");
+    }
+    catch (Exception e)
+    {
+      Console.WriteLine(e);
+      return StatusCode(StatusCodes.Status500InternalServerError, "error saving image");
+    }
+  }
 }
