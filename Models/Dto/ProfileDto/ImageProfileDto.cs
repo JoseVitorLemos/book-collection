@@ -10,6 +10,6 @@ namespace book_collection.Dto
     public IFormFile image { get; set; }
 
     [Required]
-    public int ProfileId { get; set; }
+    public int profile_id { get; set; }
   }
 }
