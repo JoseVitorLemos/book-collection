@@ -4,6 +4,7 @@ using book_collection.Dto;
 using book_collection.Context;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using AutoMapper;
 
 namespace book_collection.Controllers;
 
@@ -13,21 +14,23 @@ public class ProfileController : ControllerBase
 {
   private readonly AppDbContext _context;
   private readonly IWebHostEnvironment _webHostEnvironment;
+  private readonly IMapper _mapper;
 
-  public ProfileController(AppDbContext context, IWebHostEnvironment webHostEnvironment)
+  public ProfileController(AppDbContext context, IWebHostEnvironment webHostEnvironment, IMapper mapper)
   {
     this._context = context;
     this._webHostEnvironment = webHostEnvironment;
+    this._mapper = mapper;
   }
 
-  [HttpGet]
+  [HttpGet("image/{id}")]
   public async Task<ActionResult<ImageProfile>> Get(int id)
   {
     return await _context.ImageProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.id == id);
   }
 
   [HttpPost]
-  public ActionResult<ProfileDto> Post([FromBody] ProfileDto profile)
+  public ActionResult<ResponseProfileDto> Post([FromBody] ProfileDto profile)
   {
     try 
     {
@@ -36,45 +39,41 @@ public class ProfileController : ControllerBase
         return BadRequest("password and passwordConfirmation are not the same");
       }
 
-      var profileData = new Profile {
-        cpf = profile.cpf,
-        name = profile.name,
-        birth_date = profile.birth_date,
-        email = profile.email,
-        password = profile.password
-      };
-
+      var profileData = _mapper.Map<Profiles>(profile);
+      
       _context.Profiles.Add(profileData);
       _context.SaveChanges();
 
-      return Ok(new { id = profileData.id, profile });
+      return Ok(_mapper.Map<ResponseProfileDto>(profile));
     }
-    catch (Exception)
+    catch (Exception e)
     {
+      Console.WriteLine(e);
       return StatusCode(StatusCodes.Status500InternalServerError, "error when registering a new profile");
     }
   }
 
-  [HttpPost("image/{id}")]
-  public async Task<ActionResult> PostImageProfile(int id, [FromForm] ImageProfileDto imageProfileDto)
+  [HttpPost("image")]
+  public async Task<ActionResult> PostImageProfile([FromForm] ImageProfileDto imageProfileDto)
   {
     try 
     {
-      var images = await _context.ImageProfiles.AsNoTracking().ToListAsync();
+      var images = await _context.ImageProfiles
+        .Where(i => i.profilesId == imageProfileDto.profile_id)
+        .AsNoTracking()
+        .ToListAsync();
 
       if (images.Count() != 0) return BadRequest("profile image can only one");
 
-      if (imageProfileDto.image != null && images.Count() == 0)
+      if (imageProfileDto.image != null)
       {
         var ms = new MemoryStream();
         await imageProfileDto.image.CopyToAsync(ms);
         var fileBytes = ms.ToArray();
        
-        var imageProfile = new ImageProfile {
-          title = imageProfileDto.image.FileName,
-          image_byte = fileBytes,
-          ProfileId = imageProfileDto.ProfileId
-        };
+        var imageProfile = _mapper.Map<ImageProfile>(imageProfileDto);
+        imageProfile.image_byte = fileBytes;
+
         _context.ImageProfiles.Add(imageProfile);
         _context.SaveChanges();
       }
@@ -82,7 +81,7 @@ public class ProfileController : ControllerBase
       {
         return BadRequest();
       }
-      return Ok("Saved success");
+      return Ok("Image saved successfully");
     }
     catch (Exception e)
     {

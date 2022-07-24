@@ -5,6 +5,10 @@ namespace book_collection.Dto
 {
   public class ImageProfileDto
   {
+    [Required]
+    [MaxLength(80)]
+    public string title { get; set; }
+
     [NotMapped]
     [Required]
     public IFormFile image { get; set; }
