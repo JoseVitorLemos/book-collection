@@ -11,6 +11,8 @@ public class Program
       options.UseMySql(builder.Configuration["ConnectionStrings"], new MySqlServerVersion(new Version()));
     });
 
+    builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies()); 
+
     // Add services to the container.
     builder.Services.AddControllers();
 
