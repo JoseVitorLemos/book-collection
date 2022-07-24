@@ -17,7 +17,7 @@ namespace book_collection.Models
     public Book book { get; set; }
 
     [Column("author_id")]
-    public int AuthorId { get; set; }
+    public int authorId { get; set; }
 
     public Author author { get; set; }
   } 

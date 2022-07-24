@@ -24,7 +24,7 @@ namespace book_collection.Models
 
     [Required]
     [Column("publishing_companies_id")]
-    public int PublishingCompanieid { get; set; }
+    public int publishingCompanieid { get; set; }
 
     public ICollection<BookAuthor> BookAuthors { get; set; }
 

@@ -15,7 +15,7 @@ namespace book_collection.Models
 
     [Required]
     [Column("author_id")]
-    public int AuthorId { get; set; }
+    public int authorId { get; set; }
 
     [Required]
     public byte[] image { get; set; }
