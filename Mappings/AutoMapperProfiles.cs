@@ -15,6 +15,7 @@ namespace book_collection.Mappings
           map => map.MapFrom(prop => prop.profilesId))
         .ReverseMap();
       CreateMap<Profiles, ResponseProfileDto>().ReverseMap();
+      CreateMap<PutProfileDto, Profiles>().ReverseMap();
     }
   }
 }

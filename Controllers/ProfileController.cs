@@ -96,4 +96,28 @@ public class ProfileController : ControllerBase
       return StatusCode(StatusCodes.Status500InternalServerError, "error saving image");
     }
   }
+
+  [HttpPut("{id}")]
+  public async Task<ActionResult<PutProfileDto>> Put(int id, [FromBody] PutProfileDto profileDto)
+  {
+    try
+    {
+      var profile = await _context.Profiles.AsNoTracking().Where(p => p.id == id).FirstOrDefaultAsync();
+      if (profile == null) return NotFound();
+
+      if (profileDto.name == null) profileDto.name = profile.name;
+      if (profileDto.birth_date == DateTime.Parse("0001-01-01T00:00:00")) profileDto.birth_date = profile.birth_date;
+
+      var profileChanges = _mapper.Map(profileDto, profile);
+
+      _context.Entry(profileChanges).State = EntityState.Modified;
+      _context.SaveChanges();
+      return Ok("profile changes saved successfully");
+    }
+    catch (Exception e)
+    {
+      Console.WriteLine(e);
+      return StatusCode(StatusCodes.Status500InternalServerError, "error changes profile");
+    }
+  }
 }
