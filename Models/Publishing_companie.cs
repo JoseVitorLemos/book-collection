@@ -35,7 +35,7 @@ namespace book_collection.Models
 
     [Required]
     [Column("profile_id")]
-    public int ProfileId { get; set; }
+    public int profilesId { get; set; }
 
     public ICollection<Book> Books { get; set; }
 

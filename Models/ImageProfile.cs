@@ -16,7 +16,7 @@ namespace book_collection.Models
 
     [Required]
     [Column("profile_id")]
-    public int ProfileId { get; set; }
+    public int profilesId { get; set; }
 
     [Required]
     public byte[] image_byte { get; set; }

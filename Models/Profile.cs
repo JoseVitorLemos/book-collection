@@ -6,9 +6,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace book_collection.Models
 {
   [Table("profiles")]
-  public class Profile
+  public class Profiles
   {
-    public Profile()
+    public Profiles()
     {
       PublishingCompanies = new Collection<PublishingCompanie>();
       ImageProfiles = new Collection<ImageProfile>();
