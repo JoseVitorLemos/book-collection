@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace book_collection.Migrations
 {
-    public partial class initial : Migration
+    public partial class Initial : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -169,15 +169,14 @@ namespace book_collection.Migrations
                     title = table.Column<string>(type: "varchar(80)", maxLength: 80, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     author_id = table.Column<int>(type: "int", nullable: false),
-                    authorid = table.Column<int>(type: "int", nullable: false),
                     image_byte = table.Column<byte[]>(type: "longblob", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_image_book", x => x.id);
                     table.ForeignKey(
-                        name: "FK_image_book_authors_authorid",
-                        column: x => x.authorid,
+                        name: "FK_image_book_authors_author_id",
+                        column: x => x.author_id,
                         principalTable: "authors",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
@@ -237,9 +236,9 @@ namespace book_collection.Migrations
                 column: "author_id");
 
             migrationBuilder.CreateIndex(
-                name: "IX_image_book_authorid",
+                name: "IX_image_book_author_id",
                 table: "image_book",
-                column: "authorid");
+                column: "author_id");
 
             migrationBuilder.CreateIndex(
                 name: "IX_images_profile_profile_id",
