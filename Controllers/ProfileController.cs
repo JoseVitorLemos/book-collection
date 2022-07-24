@@ -29,6 +29,13 @@ public class ProfileController : ControllerBase
     return await _context.ImageProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.id == id);
   }
 
+  [HttpGet]
+  public async Task<ActionResult<ResponseProfileDto>> GetProfile(int id)
+  {
+    var profile = await _context.Profiles.Where(p => p.id == id).AsNoTracking().FirstOrDefaultAsync();
+    return _mapper.Map<ResponseProfileDto>(profile); 
+  }
+
   [HttpPost]
   public ActionResult<ResponseProfileDto> Post([FromBody] ProfileDto profile)
   {

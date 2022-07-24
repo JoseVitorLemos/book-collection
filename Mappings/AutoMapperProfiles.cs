@@ -14,6 +14,7 @@ namespace book_collection.Mappings
         .ForMember(dest => dest.profile_id,
           map => map.MapFrom(prop => prop.profilesId))
         .ReverseMap();
+      CreateMap<Profiles, ResponseProfileDto>().ReverseMap();
     }
   }
 }
