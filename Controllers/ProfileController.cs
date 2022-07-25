@@ -4,6 +4,7 @@ using book_collection.Dto;
 using book_collection.Context;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using book_collection.Helpers.Bcrypt;
 using AutoMapper;
 
 namespace book_collection.Controllers;
@@ -37,7 +38,7 @@ public class ProfileController : ControllerBase
   }
 
   [HttpPost]
-  public ActionResult<ResponseProfileDto> Post([FromBody] ProfileDto profile)
+  public ActionResult<ResponseProfileDto> Signup([FromBody] ProfileDto profile)
   {
     try 
     {
@@ -47,7 +48,11 @@ public class ProfileController : ControllerBase
       }
 
       var profileData = _mapper.Map<Profiles>(profile);
-      
+
+      var salt = 12;
+
+      profileData.password = Bcrypt.HashPassword(profile.password, salt);
+
       _context.Profiles.Add(profileData);
       _context.SaveChanges();
 
