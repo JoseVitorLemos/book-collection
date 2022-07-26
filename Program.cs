@@ -1,4 +1,6 @@
 using book_collection.Context;
+using book_collection.Services;
+using book_collection.Interface;
 using Microsoft.EntityFrameworkCore;
 
 public class Program
@@ -12,6 +14,8 @@ public class Program
     });
 
     builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies()); 
+
+    builder.Services.AddTransient<ISmtpHelper, SmtpHelper>(); 
 
     // Add services to the container.
     builder.Services.AddControllers();
