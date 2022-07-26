@@ -29,20 +29,20 @@ namespace book_collection.Services
       this.enableSsl = bool.Parse(configuration["Smpt.Settings:EnableSsl"]);
     }
 
-    public async Task<bool> SendEmail(string to, string title, string body)
+    public async Task SendEmail(string to, string title, string body)
     {
-      var client = new SmtpClient(host, port);
+      SmtpClient client = new SmtpClient(host, port);
       client.Credentials = new NetworkCredential(userName, password);
       client.EnableSsl = enableSsl;
       client.Host = host;
       client.Port = port;
 
-      var message = new MailMessage(emailFrom, to, title, body);
+      MailMessage message = new MailMessage(emailFrom, to, title, body);
       message.IsBodyHtml = true;
 
       try
       {
-        await client.SendAsync(message);
+        await client.SendMailAsync(message);
       }
       catch (Exception e)
       {

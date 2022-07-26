@@ -9,6 +9,6 @@ namespace book_collection.Interface
 {
   public interface ISmtpHelper
   {
-    void SendEmail(string to, string title, string body);
+    Task SendEmail(string to, string title, string body);
   }
 }
