@@ -1,7 +1,13 @@
 using book_collection.Context;
 using book_collection.Services;
 using book_collection.Interface;
+using book_collection.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using book_collection.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer; 
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 public class Program
 {
@@ -9,24 +15,46 @@ public class Program
   {
     var builder = WebApplication.CreateBuilder(args);
 
-    builder.Services.AddDbContext<AppDbContext>((DbContextOptionsBuilder options) => {
-      options.UseMySql(builder.Configuration["ConnectionStrings"], new MySqlServerVersion(new Version()));
+    IConfiguration configuration = builder.Configuration;
+    IServiceCollection services = builder.Services;
+
+    services.AddDbContext<AppDbContext>((DbContextOptionsBuilder options) => {
+      options.UseMySql(configuration["ConnectionStrings"], new MySqlServerVersion(new Version()));
     });
 
-    builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies()); 
+    var key = Encoding.ASCII.GetBytes(configuration["JWT:secret"]); 
 
-    builder.Services.AddTransient<ISmtpHelper, SmtpHelper>(); 
+    services.AddAuthentication(x =>
+    {
+      x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+      x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(x =>
+    {
+      x.RequireHttpsMetadata = false;
+      x.SaveToken = true;
+      x.TokenValidationParameters = new TokenValidationParameters
+      {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = false,
+        ValidateAudience = false
+      };
+    });
 
-    // Add services to the container.
-    builder.Services.AddControllers();
+    services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies()); 
 
-    // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-    builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
+    services.AddControllers();
+
+    services.AddTransient<ISmtpService, SmtpService>(); 
+    services.AddTransient<IJwtService, JwtService>(); 
+    services.AddScoped<IProfilesRepository, ProfilesRepository>();
+
+    services.AddEndpointsApiExplorer();
+    services.AddSwaggerGen();
 
     var app = builder.Build();
 
-    // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())
     {
       app.UseSwagger();
@@ -35,6 +63,7 @@ public class Program
 
     app.UseHttpsRedirection();
 
+    app.UseAuthentication();
     app.UseAuthorization();
 
     app.MapControllers();
