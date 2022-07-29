@@ -36,6 +36,10 @@ namespace book_collection.Models
     [MaxLength(80)]
     public string password { get; set; }
 
+    public bool email_confirmation { get; set; } = false;
+
+    public bool removed { get; set; } = false;
+
     public ICollection<PublishingCompanie> PublishingCompanies { get; set; }
 
     public ICollection<ImageProfile> ImageProfiles { get; set; }
