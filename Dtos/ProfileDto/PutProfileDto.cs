@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace book_collection.Dto
 {
-  public class EditProfileDto
+  public class PutProfileDto
   {
     public string? name { get; set; }
 

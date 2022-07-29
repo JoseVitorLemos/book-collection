@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace book_collection.Dto
 {
-  public class ProfileDto
+  public class CreateProfileDto
   {
     [Required(ErrorMessage = "cpf is required")]
     [MaxLength(80)]
