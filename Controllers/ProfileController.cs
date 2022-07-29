@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using book_collection.Interface;
 using book_collection.Models;
 using book_collection.Dto;
 using book_collection.Context;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using book_collection.Helpers.Bcrypt;
+using book_collection.Repositories;
 using AutoMapper;
 
 namespace book_collection.Controllers;
@@ -14,14 +16,50 @@ namespace book_collection.Controllers;
 public class ProfileController : ControllerBase
 {
   private readonly AppDbContext _context;
-  private readonly IWebHostEnvironment _webHostEnvironment;
   private readonly IMapper _mapper;
+  private readonly ISmtpService _smtpService;
+  private readonly IJwtService _jwtService;
+  private readonly IProfilesRepository _profileRepositories;
 
-  public ProfileController(AppDbContext context, IWebHostEnvironment webHostEnvironment, IMapper mapper)
+  public ProfileController (
+    AppDbContext context, 
+    IMapper mapper,
+    ISmtpService smtpHelper,
+    IJwtService jwtService,
+    IProfilesRepository profilesRepository)
   {
     this._context = context;
-    this._webHostEnvironment = webHostEnvironment;
     this._mapper = mapper;
+    this._smtpService = smtpHelper;
+    this._jwtService = jwtService;
+    this._profileRepositories = profilesRepository;
+  }
+
+  [HttpPost("/login")]
+  public async Task<ActionResult<dynamic>> LoginAsync([FromBody] LoginDto model)
+  {
+    var user = await _profileRepositories.Get(model); 
+
+    if (user == null) return NotFound(new { message = "user or password invalid" });
+
+    var validatePassword = Bcrypt.ValidatePassword(model.password, user.password);
+
+    if (!validatePassword) return BadRequest(new { message = "invalid password" });
+
+    var token = _jwtService.GenerateToken(user.email);
+
+    var image = user.ImageProfiles;
+
+    return new 
+    {
+      user = new {
+        id = user.id,
+        name = user.name,
+        email = user.email,
+        image = image.Count == 0 ? null : image.ElementAt(0).image_byte
+      },
+      token
+    };
   }
 
   [HttpGet("image/{id}")]
@@ -34,29 +72,26 @@ public class ProfileController : ControllerBase
   public async Task<ActionResult<ResponseProfileDto>> GetProfile(int id)
   {
     var profile = await _context.Profiles.Where(p => p.id == id).AsNoTracking().FirstOrDefaultAsync();
-    return _mapper.Map<ResponseProfileDto>(profile); 
+    return _mapper.Map<ResponseProfileDto>(profile);
   }
 
-  [HttpPost]
-  public ActionResult<ResponseProfileDto> Signup([FromBody] ProfileDto profile)
+  [HttpPost("/signup")]
+  public ActionResult<ResponseProfileDto> Signup([FromBody] CreateProfileDto model)
   {
     try 
     {
-      if (profile.password != profile.passwordConfirmation) 
-      {
-        return BadRequest("password and passwordConfirmation are not the same");
-      }
-
-      var profileData = _mapper.Map<Profiles>(profile);
+      var profile = _mapper.Map<Profiles>(model);
 
       var salt = 12;
 
-      profileData.password = Bcrypt.HashPassword(profile.password, salt);
+      profile.password = Bcrypt.HashPassword(profile.password, salt);
 
-      _context.Profiles.Add(profileData);
+      _context.Profiles.Add(profile);
       _context.SaveChanges();
 
-      return Ok(_mapper.Map<ResponseProfileDto>(profile));
+      _smtpService.SendEmail(profile.email, "Confirmation email", "Use this link to confirm email");
+
+      return Ok(_mapper.Map<ResponseProfileDto>(model));
     }
     catch (Exception e)
     {
@@ -103,7 +138,7 @@ public class ProfileController : ControllerBase
   }
 
   [HttpPut("{id}")]
-  public async Task<ActionResult<PutProfileDto>> Put(int id, [FromBody] PutProfileDto profileDto)
+  public async Task<ActionResult<CreateProfileDto>> Put(int id, [FromBody] CreateProfileDto profileDto)
   {
     try
     {
