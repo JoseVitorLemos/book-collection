@@ -8,7 +8,7 @@ using book_collection.Interface;
 
 namespace book_collection.Services
 {
-  public class SmtpHelper : ISmtpHelper
+  public class SmtpService : ISmtpService
   {
     private readonly IConfiguration Configuration;
     private readonly string userName;
@@ -18,7 +18,7 @@ namespace book_collection.Services
     private readonly int port;
     private readonly bool enableSsl;
 
-    public SmtpHelper(IConfiguration configuration)
+    public SmtpService(IConfiguration configuration)
     {
       Configuration = configuration;
       this.emailFrom = configuration["Smpt.Settings:Email"];
