@@ -5,27 +5,30 @@ namespace book_collection.Dto
 {
   public class ProfileDto
   {
-    [Required]
+    [Required(ErrorMessage = "cpf is required")]
     [MaxLength(80)]
     public string cpf { get; set; }
 
-    [Required]
+    [Required(ErrorMessage = "name is required")]
     [MaxLength(80)]
     public string name { get; set; }
 
-    [Required]
+    [Required(ErrorMessage = "birth date is required")]
     public DateTime birth_date { get; set; }
 
-    [Required]
+    [Required(ErrorMessage = "email is required")]
     [MaxLength(300)]
     public string email { get; set; }
 
     [Required]
-    [MaxLength(80)]
+    [MinLength(5)]
+    [MaxLength(20)]
     public string password { get; set; }
 
     [Required]
-    [MaxLength(80)]
+    [DataType(DataType.Password)]
+    [Compare("password", ErrorMessage = "password and passwordConfirmation are not the same")]
+    [NotMapped]
     public string passwordConfirmation { get; set; }
   }
 }
