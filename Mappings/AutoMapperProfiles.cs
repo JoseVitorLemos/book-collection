@@ -8,8 +8,8 @@ namespace book_collection.Mappings
   {
     public AutoMapperProfiles()
     {
-      CreateMap<Profiles, ProfileDto>().ReverseMap();
-      CreateMap<ProfileDto, ResponseProfileDto>().ReverseMap();
+      CreateMap<Profiles, CreateProfileDto>().ReverseMap();
+      CreateMap<CreateProfileDto, ResponseProfileDto>().ReverseMap();
       CreateMap<ImageProfile, ImageProfileDto>()
         .ForMember(dest => dest.profile_id,
           map => map.MapFrom(prop => prop.profilesId))
