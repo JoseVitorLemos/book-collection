@@ -10,10 +10,14 @@ namespace book_collection.Services
   {
     private readonly IConfiguration Configuration;
     private readonly string _secret;
+    private readonly int _expireHours;
+    private readonly string _audience;
 
     public JwtService(IConfiguration configuration)
     {
       this._secret = configuration["JWT:secret"];
+      this._expireHours = int.Parse(configuration["JWT:TokenConfiguration:expireHours"]);
+      this._audience = configuration["JWT:TokenConfiguration:audience"];
     }
     public string GenerateToken(string email)
     {
@@ -23,9 +27,9 @@ namespace book_collection.Services
       {
         Subject = new ClaimsIdentity(new[]
         {
-          new Claim(ClaimTypes.Email, email)
+          new Claim(ClaimTypes.Actor, _audience)
         }),
-        Expires = DateTime.UtcNow.AddHours(8),
+        Expires = DateTime.UtcNow.AddHours(_expireHours),
         SigningCredentials = new SigningCredentials (
           new SymmetricSecurityKey(key),
           SecurityAlgorithms.HmacSha256Signature
