@@ -1,9 +1,9 @@
-using book_collection.Dto;
+using book_collection.Models;
 
 namespace book_collection.Interface
 {
   public interface IJwtService
   {
-    string GenerateToken(string email);
+    string GenerateToken(Profiles body);
   }
 }
