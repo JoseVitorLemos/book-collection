@@ -28,8 +28,7 @@ namespace book_collection.Services
       {
         Subject = new ClaimsIdentity(new[]
         {
-          new Claim(JwtRegisteredClaimNames.Sub, body.id.ToString()),
-          new Claim(JwtRegisteredClaimNames.Email, body.email)
+          new Claim(JwtRegisteredClaimNames.Sub, body.id.ToString())
         }),
         Expires = DateTime.UtcNow.AddHours(_expireHours),
         SigningCredentials = new SigningCredentials (

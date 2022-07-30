@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
 using book_collection.Interface;
 using book_collection.Models;
 using book_collection.Dto;
@@ -7,157 +8,172 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using book_collection.Helpers.Bcrypt;
 using book_collection.Repositories;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using AutoMapper;
 
-namespace book_collection.Controllers;
-
-[ApiController]
-[Route("[controller]")]
-public class ProfileController : ControllerBase
+namespace book_collection.Controllers 
 {
-  private readonly AppDbContext _context;
-  private readonly IMapper _mapper;
-  private readonly ISmtpService _smtpService;
-  private readonly IJwtService _jwtService;
-  private readonly IProfilesRepository _profileRepositories;
 
-  public ProfileController (
-    AppDbContext context, 
-    IMapper mapper,
-    ISmtpService smtpHelper,
-    IJwtService jwtService,
-    IProfilesRepository profilesRepository)
+  [Authorize]
+  [ApiController]
+  [Route("[controller]")]
+  public class ProfileController : ControllerBase
   {
-    this._context = context;
-    this._mapper = mapper;
-    this._smtpService = smtpHelper;
-    this._jwtService = jwtService;
-    this._profileRepositories = profilesRepository;
-  }
+    private readonly AppDbContext _context;
+    private readonly IMapper _mapper;
+    private readonly ISmtpService _smtpService;
+    private readonly IJwtService _jwtService;
+    private readonly IProfilesRepository _profileRepositories;
 
-  [HttpPost("/login")]
-  public async Task<ActionResult<dynamic>> LoginAsync([FromBody] LoginDto model)
-  {
-    var user = await _profileRepositories.Get(model); 
-
-    if (user == null) return NotFound(new { message = "user or password invalid" });
-
-    var validatePassword = Bcrypt.ValidatePassword(model.password, user.password);
-
-    if (!validatePassword) return BadRequest(new { message = "invalid password" });
-
-    var token = _jwtService.GenerateToken(user.email);
-
-    var image = user.ImageProfiles;
-
-    return new 
+    public ProfileController (
+      AppDbContext context, 
+      IMapper mapper,
+      ISmtpService smtpHelper,
+      IJwtService jwtService,
+      IProfilesRepository profilesRepository)
     {
-      user = new {
-        id = user.id,
-        name = user.name,
-        email = user.email,
-        image = image.Count == 0 ? null : image.ElementAt(0).image_byte
-      },
-      token
-    };
-  }
-
-  [HttpGet("image/{id}")]
-  public async Task<ActionResult<ImageProfile>> Get(int id)
-  {
-    return await _context.ImageProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.id == id);
-  }
-
-  [HttpGet]
-  public async Task<ActionResult<ResponseProfileDto>> GetProfile(int id)
-  {
-    var profile = await _context.Profiles.Where(p => p.id == id).AsNoTracking().FirstOrDefaultAsync();
-    return _mapper.Map<ResponseProfileDto>(profile);
-  }
-
-  [HttpPost("/signup")]
-  public ActionResult<ResponseProfileDto> Signup([FromBody] CreateProfileDto model)
-  {
-    try 
-    {
-      var profile = _mapper.Map<Profiles>(model);
-
-      var salt = 12;
-
-      profile.password = Bcrypt.HashPassword(profile.password, salt);
-
-      _context.Profiles.Add(profile);
-      _context.SaveChanges();
-
-      _smtpService.SendEmail(profile.email, "Confirmation email", "Use this link to confirm email");
-
-      return Ok(_mapper.Map<ResponseProfileDto>(model));
+      this._context = context;
+      this._mapper = mapper;
+      this._smtpService = smtpHelper;
+      this._jwtService = jwtService;
+      this._profileRepositories = profilesRepository;
     }
-    catch (Exception e)
+
+    [HttpPost("/login")]
+    [AllowAnonymous]
+    public async Task<ActionResult<dynamic>> LoginAsync([FromBody] LoginDto model)
     {
-      Console.WriteLine(e);
-      return StatusCode(StatusCodes.Status500InternalServerError, "error when registering a new profile");
-    }
-  }
+      var user = await _profileRepositories.Get(model); 
 
-  [HttpPost("image")]
-  public async Task<ActionResult> PostImageProfile([FromForm] ImageProfileDto imageProfileDto)
-  {
-    try 
-    {
-      var images = await _context.ImageProfiles
-        .Where(i => i.profilesId == imageProfileDto.profile_id)
-        .AsNoTracking()
-        .ToListAsync();
+      if (user == null) return NotFound(new { message = "user or password invalid" });
 
-      if (images.Count() != 0) return BadRequest("profile image can only one");
+      var validatePassword = Bcrypt.ValidatePassword(model.password, user.password);
 
-      if (imageProfileDto.image != null)
+      if (!validatePassword) return BadRequest(new { message = "invalid password" });
+
+      var token = _jwtService.GenerateToken(user);
+
+      var image = user.ImageProfiles;
+
+      return new 
       {
-        var ms = new MemoryStream();
-        await imageProfileDto.image.CopyToAsync(ms);
-        var fileBytes = ms.ToArray();
-       
-        var imageProfile = _mapper.Map<ImageProfile>(imageProfileDto);
-        imageProfile.image_byte = fileBytes;
+        user = new {
+          id = user.id,
+          name = user.name,
+           email = user.email,
+           image = image.Count == 0 ? null : image.Single().image_byte
+        },
+        token
+      };
+    }
 
-        _context.ImageProfiles.Add(imageProfile);
+    [HttpPost("/signup")]
+    [AllowAnonymous]
+    public ActionResult<ResponseProfileDto> Signup([FromBody] CreateProfileDto model)
+    {
+      try 
+      {
+        var profile = _mapper.Map<Profiles>(model);
+
+        var salt = 12;
+
+        var data = _context.Profiles.Where(p => (p.email == model.email) || (p.cpf == model.cpf)).AsNoTracking().ToList();
+
+        if (data.Count > 0) return NotFound(new { message = "email or cpf already registered" }); 
+
+        profile.password = Bcrypt.HashPassword(profile.password, salt);
+
+        _context.Profiles.Add(profile);
         _context.SaveChanges();
+
+        _smtpService.SendEmail(profile.email, "Confirmation email", "Use this link to confirm email");
+
+        return Ok(_mapper.Map<ResponseProfileDto>(model));
       }
-      else
+      catch (Exception e)
       {
-        return BadRequest();
+        Console.WriteLine(e);
+        return StatusCode(StatusCodes.Status500InternalServerError, "error when registering a new profile");
       }
-      return Ok("Image saved successfully");
     }
-    catch (Exception e)
+
+    [Route("image/{id}")]
+    [HttpGet]
+    public async Task<ActionResult<ImageProfile>> Get(Guid id)
     {
-      Console.WriteLine(e);
-      return StatusCode(StatusCodes.Status500InternalServerError, "error saving image");
+      return await _context.ImageProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.id == id);
     }
-  }
 
-  [HttpPut("{id}")]
-  public async Task<ActionResult<CreateProfileDto>> Put(int id, [FromBody] CreateProfileDto profileDto)
-  {
-    try
+    [HttpGet]
+    public async Task<ActionResult<ResponseProfileDto>> GetProfile(Guid id)
     {
-      var profile = await _context.Profiles.AsNoTracking().Where(p => p.id == id).FirstOrDefaultAsync();
-      if (profile == null) return NotFound();
-
-      if (profileDto.name == null) profileDto.name = profile.name;
-      if (profileDto.birth_date == DateTime.Parse("0001-01-01T00:00:00")) profileDto.birth_date = profile.birth_date;
-
-      var profileChanges = _mapper.Map(profileDto, profile);
-
-      _context.Entry(profileChanges).State = EntityState.Modified;
-      _context.SaveChanges();
-      return Ok("profile changes saved successfully");
+      var profile = await _context.Profiles.Where(p => p.id == id).AsNoTracking().FirstOrDefaultAsync();
+      return _mapper.Map<ResponseProfileDto>(profile);
     }
-    catch (Exception e)
+
+    [HttpPost("image")]
+    public async Task<ActionResult> PostImageProfile([FromForm] ImageProfileDto imageProfileDto)
     {
-      Console.WriteLine(e);
-      return StatusCode(StatusCodes.Status500InternalServerError, "error changes profile");
+      try 
+      {
+        var images = await _context.ImageProfiles
+          .Where(i => i.profilesId == imageProfileDto.profile_id)
+          .AsNoTracking()
+          .ToListAsync();
+
+        if (images.Count() != 0) return BadRequest("can only one profile image");
+
+        if (imageProfileDto.image != null)
+        {
+          var ms = new MemoryStream();
+          await imageProfileDto.image.CopyToAsync(ms);
+          var fileBytes = ms.ToArray();
+
+          var imageProfile = _mapper.Map<ImageProfile>(imageProfileDto);
+          imageProfile.image_byte = fileBytes;
+
+          _context.ImageProfiles.Add(imageProfile);
+          _context.SaveChanges();
+        }
+        else
+        {
+          return BadRequest();
+        }
+        return Ok("Image saved successfully");
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine(e);
+        return StatusCode(StatusCodes.Status500InternalServerError, "error saving image");
+      }
+    }
+
+    [HttpPut]
+    public async Task<ActionResult<string>> Put([FromBody] PutProfileDto profileDto)
+    {
+      try
+      {
+        var id = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+        var profile = await _context.Profiles.AsNoTracking().Where(p => p.id == id).FirstOrDefaultAsync();
+
+        if (profile == null) return NotFound(new { message = "Unauthorized invalid id" });
+
+        if (profileDto.name == null) profileDto.name = profile.name;
+        if (profileDto.birth_date == DateTime.Parse("0001-01-01T00:00:00")) profileDto.birth_date = profile.birth_date;
+
+        var profileChanges = _mapper.Map(profileDto, profile);
+
+        _context.Entry(profileChanges).State = EntityState.Modified;
+        _context.SaveChanges();
+        return Ok("profile changes saved successfully");
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine(e);
+        return StatusCode(StatusCodes.Status500InternalServerError, "error changes profile");
+      }
     }
   }
 }

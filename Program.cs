@@ -44,6 +44,7 @@ public class Program
 
     services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies()); 
 
+    services.AddCors();
     services.AddControllers();
 
     services.AddTransient<ISmtpService, SmtpService>(); 
@@ -62,6 +63,11 @@ public class Program
     }
 
     app.UseHttpsRedirection();
+
+     app.UseCors(c => c
+      .AllowAnyOrigin()
+      .AllowAnyMethod()
+      .AllowAnyHeader());
 
     app.UseAuthentication();
     app.UseAuthorization();
