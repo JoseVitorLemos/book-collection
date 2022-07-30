@@ -14,6 +14,7 @@ namespace book_collection.Dto
     public IFormFile image { get; set; }
 
     [Required]
-    public int profile_id { get; set; }
+    public Guid
+      profile_id { get; set; }
   }
 }
