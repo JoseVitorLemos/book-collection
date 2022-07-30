@@ -5,11 +5,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace book_collection.Models
 {
   [Table("authors")]
-  public class Author
+  public class Author : BaseEntity
   {
-    [Key]
-    public int id { get; set; }
-
     [Required]
     [MaxLength(80)]
     public string name { get; set; }
@@ -24,7 +21,7 @@ namespace book_collection.Models
 
     [Required]
     [Column("publishing_companies_id")]
-    public int publishingCompanieid { get; set; }
+    public Guid publishingCompanieid { get; set; }
 
     public ICollection<BookAuthor> BookAuthors { get; set; }
 

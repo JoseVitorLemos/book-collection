@@ -6,16 +6,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace book_collection.Models
 {
   [Table("profiles")]
-  public class Profiles
+  public class Profiles : BaseEntity
   {
     public Profiles()
     {
       PublishingCompanies = new Collection<PublishingCompanie>();
       ImageProfiles = new Collection<ImageProfile>();
     }
-
-    [Key]
-    public int id { get; set; }
 
     [Required]
     [MaxLength(80)]

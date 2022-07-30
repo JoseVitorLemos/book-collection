@@ -7,16 +7,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace book_collection.Models
 {
   [Table("publishing_companies")]
-  public class PublishingCompanie
+  public class PublishingCompanie : BaseEntity
   {
     public PublishingCompanie()
     {
       Books = new Collection<Book>();
       Authors = new Collection<Author>();
     }
-
-    [Key]
-    public int id { get; set; }
 
     [Required]
     [MaxLength(80)]
@@ -35,7 +32,7 @@ namespace book_collection.Models
 
     [Required]
     [Column("profile_id")]
-    public int profilesId { get; set; }
+    public Guid profilesId { get; set; }
 
     public ICollection<Book> Books { get; set; }
 
