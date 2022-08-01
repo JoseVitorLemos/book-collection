@@ -1,6 +1,7 @@
 using book_collection.Context;
 using book_collection.Services;
 using book_collection.Interface;
+using book_collection.Helpers.Auth;
 using book_collection.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
@@ -43,12 +44,16 @@ public class Program
     });
 
     services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies()); 
+    services.AddHttpContextAccessor();
 
     services.AddCors();
     services.AddControllers();
 
     services.AddTransient<ISmtpService, SmtpService>(); 
     services.AddTransient<IJwtService, JwtService>(); 
+    services.AddTransient<IAuthProvider, AuthProvider>(); 
+
+    services.AddScoped<IUnitOfWork, UnitOfWork>();
     services.AddScoped<IProfilesRepository, ProfilesRepository>();
 
     services.AddEndpointsApiExplorer();
