@@ -12,9 +12,5 @@ namespace book_collection.Dto
     [NotMapped]
     [Required]
     public IFormFile image { get; set; }
-
-    [Required]
-    public Guid
-      profile_id { get; set; }
   }
 }
