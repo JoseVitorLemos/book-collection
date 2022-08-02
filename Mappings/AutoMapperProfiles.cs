@@ -10,10 +10,7 @@ namespace book_collection.Mappings
     {
       CreateMap<Profiles, CreateProfileDto>().ReverseMap();
       CreateMap<CreateProfileDto, ResponseProfileDto>().ReverseMap();
-      CreateMap<ImageProfile, ImageProfileDto>()
-        .ForMember(dest => dest.profile_id,
-          map => map.MapFrom(prop => prop.profilesId))
-        .ReverseMap();
+      CreateMap<ImageProfile, ImageProfileDto>().ReverseMap();
       CreateMap<Profiles, ResponseProfileDto>().ReverseMap();
       CreateMap<PutProfileDto, Profiles>().ReverseMap();
     }
