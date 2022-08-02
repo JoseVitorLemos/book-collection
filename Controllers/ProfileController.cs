@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
 using book_collection.Interface;
 using book_collection.Models;
 using book_collection.Dto;
@@ -7,9 +6,9 @@ using book_collection.Context;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using book_collection.Helpers.Bcrypt;
+using book_collection.Helpers.Auth;
 using book_collection.Repositories;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 using AutoMapper;
 
 namespace book_collection.Controllers 
@@ -20,31 +19,32 @@ namespace book_collection.Controllers
   [Route("[controller]")]
   public class ProfileController : ControllerBase
   {
-    private readonly AppDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly ISmtpService _smtpService;
     private readonly IJwtService _jwtService;
-    private readonly IProfilesRepository _profileRepositories;
+    private readonly IAuthProvider _auth;
 
     public ProfileController (
-      AppDbContext context, 
+      IUnitOfWork unitOfWork,
       IMapper mapper,
       ISmtpService smtpHelper,
       IJwtService jwtService,
-      IProfilesRepository profilesRepository)
+      IProfilesRepository profilesRepository,
+      IAuthProvider authProvider)
     {
-      this._context = context;
       this._mapper = mapper;
       this._smtpService = smtpHelper;
       this._jwtService = jwtService;
-      this._profileRepositories = profilesRepository;
+      this._unitOfWork = unitOfWork;
+      this._auth = authProvider;
     }
 
-    [HttpPost("/login")]
+    [HttpPost("login")]
     [AllowAnonymous]
     public async Task<ActionResult<dynamic>> LoginAsync([FromBody] LoginDto model)
     {
-      var user = await _profileRepositories.Get(model); 
+      var user = await _unitOfWork.ProfilesRepository.Login(model);
 
       if (user == null) return NotFound(new { message = "user or password invalid" });
 
@@ -68,7 +68,7 @@ namespace book_collection.Controllers
       };
     }
 
-    [HttpPost("/signup")]
+    [HttpPost("signup")]
     [AllowAnonymous]
     public ActionResult<ResponseProfileDto> Signup([FromBody] CreateProfileDto model)
     {
@@ -76,16 +76,17 @@ namespace book_collection.Controllers
       {
         var profile = _mapper.Map<Profiles>(model);
 
+        var userExist = _unitOfWork.ProfilesRepository.OrWhere(profile);
+
+        if (userExist) 
+          return BadRequest(new { message = "email or cpf already registered" });
+
         var salt = 12;
-
-        var data = _context.Profiles.Where(p => (p.email == model.email) || (p.cpf == model.cpf)).AsNoTracking().ToList();
-
-        if (data.Count > 0) return NotFound(new { message = "email or cpf already registered" }); 
 
         profile.password = Bcrypt.HashPassword(profile.password, salt);
 
-        _context.Profiles.Add(profile);
-        _context.SaveChanges();
+        _unitOfWork.ProfilesRepository.Add(profile);
+        _unitOfWork.Commit();
 
         _smtpService.SendEmail(profile.email, "Confirmation email", "Use this link to confirm email");
 
@@ -98,17 +99,16 @@ namespace book_collection.Controllers
       }
     }
 
-    [Route("image/{id}")]
-    [HttpGet]
-    public async Task<ActionResult<ImageProfile>> Get(Guid id)
+    [HttpGet("image")]
+    public ActionResult<ImageProfile> FindImage()
     {
-      return await _context.ImageProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.id == id);
+      return _unitOfWork.ImageProfileRepositoy.GetById(i => i.profilesId == _auth.GetUserId());
     }
 
     [HttpGet]
-    public async Task<ActionResult<ResponseProfileDto>> GetProfile(Guid id)
+    public async Task<ActionResult<ResponseProfileDto>> GetProfile()
     {
-      var profile = await _context.Profiles.Where(p => p.id == id).AsNoTracking().FirstOrDefaultAsync();
+      var profile = _unitOfWork.ProfilesRepository.GetById(p => p.id == _auth.GetUserId());
       return _mapper.Map<ResponseProfileDto>(profile);
     }
 
@@ -117,12 +117,9 @@ namespace book_collection.Controllers
     {
       try 
       {
-        var images = await _context.ImageProfiles
-          .Where(i => i.profilesId == imageProfileDto.profile_id)
-          .AsNoTracking()
-          .ToListAsync();
+        var image = _unitOfWork.ImageProfileRepositoy.GetById(i => i.profilesId == _auth.GetUserId());
 
-        if (images.Count() != 0) return BadRequest("can only one profile image");
+        if (image != null) return BadRequest(new { message = "can only one profile image" });
 
         if (imageProfileDto.image != null)
         {
@@ -132,9 +129,10 @@ namespace book_collection.Controllers
 
           var imageProfile = _mapper.Map<ImageProfile>(imageProfileDto);
           imageProfile.image_byte = fileBytes;
+          imageProfile.profilesId = _auth.GetUserId();
 
-          _context.ImageProfiles.Add(imageProfile);
-          _context.SaveChanges();
+          _unitOfWork.ImageProfileRepositoy.Add(imageProfile);
+          _unitOfWork.Commit();
         }
         else
         {
@@ -144,7 +142,7 @@ namespace book_collection.Controllers
       }
       catch (Exception e)
       {
-        Console.WriteLine(e);
+        Console.WriteLine(e.Message);
         return StatusCode(StatusCodes.Status500InternalServerError, "error saving image");
       }
     }
@@ -154,9 +152,7 @@ namespace book_collection.Controllers
     {
       try
       {
-        var id = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-
-        var profile = await _context.Profiles.AsNoTracking().Where(p => p.id == id).FirstOrDefaultAsync();
+        var profile = _unitOfWork.ProfilesRepository.GetById(p => p.id == _auth.GetUserId());
 
         if (profile == null) return NotFound(new { message = "Unauthorized invalid id" });
 
@@ -165,14 +161,48 @@ namespace book_collection.Controllers
 
         var profileChanges = _mapper.Map(profileDto, profile);
 
-        _context.Entry(profileChanges).State = EntityState.Modified;
-        _context.SaveChanges();
+        _unitOfWork.ProfilesRepository.Update(profileChanges);
+        _unitOfWork.Commit();
         return Ok("profile changes saved successfully");
       }
       catch (Exception e)
       {
         Console.WriteLine(e);
         return StatusCode(StatusCodes.Status500InternalServerError, "error changes profile");
+      }
+    }
+
+    [HttpPut("image")]
+    public async Task<ActionResult> UpdateImageProfile([FromForm] ImageProfileDto imageProfileDto)
+    {
+      try 
+      {
+        if (imageProfileDto.image != null)
+        {
+          var ms = new MemoryStream();
+          await imageProfileDto.image.CopyToAsync(ms);
+          var fileBytes = ms.ToArray();
+
+          var imageProfile = _unitOfWork.ImageProfileRepositoy.GetById(i => i.profilesId == _auth.GetUserId());
+
+          if (imageProfile == null) return BadRequest(new { message = "no image registered" });
+
+          var imageChange = _mapper.Map(imageProfileDto, imageProfile);
+          imageChange.image_byte = fileBytes;
+
+          _unitOfWork.ImageProfileRepositoy.Update(imageChange);
+          _unitOfWork.Commit();
+        }
+        else
+        {
+          return BadRequest(new { message = "image are not provided" });
+        }
+        return Ok("Image updated successfully");
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine(e.Message);
+        return StatusCode(StatusCodes.Status500InternalServerError, "error saving image");
       }
     }
   }
