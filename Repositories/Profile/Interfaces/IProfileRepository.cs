@@ -8,6 +8,6 @@ namespace book_collection.Interface
   {
     Task<Profiles> Login(LoginDto login);
 
-    bool OrWhere(Profiles model);
+    Task<bool> OrWhere(Profiles model);
   }
 }

@@ -17,15 +17,15 @@ namespace book_collection.Repositories
 
     public async Task<Profiles> Login(LoginDto login)
     {
-      var profile = _context.Profiles.Include(x=> x.ImageProfiles).FirstOrDefault(p => p.email == login.email) ?? 
-        _context.Profiles.Include(x => x.ImageProfiles).FirstOrDefault(p => p.cpf == login.cpf);
+      var profile = await _context.Profiles.Include(x=> x.ImageProfiles).FirstOrDefaultAsync(p => p.email == login.email) ?? 
+      await _context.Profiles.Include(x => x.ImageProfiles).FirstOrDefaultAsync(p => p.cpf == login.cpf);
       return profile;
     }
 
-    public bool OrWhere(Profiles model)
+    public async Task<bool> OrWhere(Profiles model)
     {
-      var profile = _context.Profiles.AsNoTracking().Where(p => (p.email == model.email) || (p.cpf == model.cpf)).ToList();
-      return profile.Count > 0 ? true : false;
+      var profile = await _context.Profiles.AsNoTracking().Where(p => (p.email == model.email) || (p.cpf == model.cpf)).CountAsync();
+      return profile > 0;
     }
   }
 }

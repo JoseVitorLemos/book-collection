@@ -32,7 +32,7 @@ namespace book_collection.Repositories
     {
       try
       {
-        _context.SaveChangesAsync().Wait();
+        await _context.SaveChangesAsync();
       } 
       catch(Exception ex)
       {
@@ -42,7 +42,7 @@ namespace book_collection.Repositories
 
     public async void Dispose()
     {
-      _context.Dispose();
+      await _context.DisposeAsync();
     }
   }
 }
