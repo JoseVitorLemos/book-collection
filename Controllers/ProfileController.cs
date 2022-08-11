@@ -13,7 +13,6 @@ using AutoMapper;
 
 namespace book_collection.Controllers 
 {
-
   [Authorize]
   [ApiController]
   [Route("[controller]")]
@@ -23,7 +22,7 @@ namespace book_collection.Controllers
     private readonly IMapper _mapper;
     private readonly ISmtpService _smtpService;
     private readonly IJwtService _jwtService;
-    private readonly IAuthProvider _auth;
+    private readonly IAuth _auth;
 
     public ProfileController (
       IUnitOfWork unitOfWork,
@@ -31,13 +30,13 @@ namespace book_collection.Controllers
       ISmtpService smtpHelper,
       IJwtService jwtService,
       IProfilesRepository profilesRepository,
-      IAuthProvider authProvider)
+      IAuth auth)
     {
       this._mapper = mapper;
       this._smtpService = smtpHelper;
       this._jwtService = jwtService;
       this._unitOfWork = unitOfWork;
-      this._auth = authProvider;
+      this._auth = auth;
     }
 
     [HttpPost("login")]
@@ -70,13 +69,14 @@ namespace book_collection.Controllers
 
     [HttpPost("signup")]
     [AllowAnonymous]
-    public ActionResult<ResponseProfileDto> Signup([FromBody] CreateProfileDto model)
+    public async Task<ActionResult<ResponseProfileDto>> Signup([FromBody] CreateProfileDto model)
     {
       try 
       {
         var profile = _mapper.Map<Profiles>(model);
 
-        var userExist = _unitOfWork.ProfilesRepository.OrWhere(profile);
+        var userExist = await _unitOfWork.ProfilesRepository.OrWhere(profile);
+        Console.WriteLine(userExist);
 
         if (userExist) 
           return BadRequest(new { message = "email or cpf already registered" });
@@ -88,7 +88,7 @@ namespace book_collection.Controllers
         _unitOfWork.ProfilesRepository.Add(profile);
         _unitOfWork.Commit();
 
-        _smtpService.SendEmail(profile.email, "Confirmation email", "Use this link to confirm email");
+        await _smtpService.SendEmail(profile.email, "Confirmation email", "Use this link to confirm email");
 
         return Ok(_mapper.Map<ResponseProfileDto>(model));
       }
@@ -100,15 +100,17 @@ namespace book_collection.Controllers
     }
 
     [HttpGet("image")]
-    public ActionResult<ImageProfile> FindImage()
+    public async Task<ActionResult<ImageProfile>> FindImage()
     {
-      return _unitOfWork.ImageProfileRepositoy.GetById(i => i.profilesId == _auth.GetUserId());
+      var imageProfile = await _unitOfWork.ImageProfileRepositoy.GetById(i => i.profilesId == _auth.GetUserId());
+      if(imageProfile == null) return NotFound();
+      return imageProfile;
     }
 
     [HttpGet]
     public async Task<ActionResult<ResponseProfileDto>> GetProfile()
     {
-      var profile = _unitOfWork.ProfilesRepository.GetById(p => p.id == _auth.GetUserId());
+      var profile = await _unitOfWork.ProfilesRepository.GetById(p => p.id == _auth.GetUserId());
       return _mapper.Map<ResponseProfileDto>(profile);
     }
 
@@ -117,7 +119,7 @@ namespace book_collection.Controllers
     {
       try 
       {
-        var image = _unitOfWork.ImageProfileRepositoy.GetById(i => i.profilesId == _auth.GetUserId());
+        var image = await _unitOfWork.ImageProfileRepositoy.GetById(i => i.profilesId == _auth.GetUserId());
 
         if (image != null) return BadRequest(new { message = "can only one profile image" });
 
@@ -152,7 +154,7 @@ namespace book_collection.Controllers
     {
       try
       {
-        var profile = _unitOfWork.ProfilesRepository.GetById(p => p.id == _auth.GetUserId());
+        var profile = await _unitOfWork.ProfilesRepository.GetById(p => p.id == _auth.GetUserId());
 
         if (profile == null) return NotFound(new { message = "Unauthorized invalid id" });
 
@@ -183,7 +185,7 @@ namespace book_collection.Controllers
           await imageProfileDto.image.CopyToAsync(ms);
           var fileBytes = ms.ToArray();
 
-          var imageProfile = _unitOfWork.ImageProfileRepositoy.GetById(i => i.profilesId == _auth.GetUserId());
+          var imageProfile = await _unitOfWork.ImageProfileRepositoy.GetById(i => i.profilesId == _auth.GetUserId());
 
           if (imageProfile == null) return BadRequest(new { message = "no image registered" });
 

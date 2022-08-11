@@ -1,6 +1,6 @@
 namespace book_collection.Interface
 {
-  public interface IAuthProvider
+  public interface IAuth
   {
     Guid GetUserId();
   }

@@ -51,7 +51,7 @@ public class Program
 
     services.AddTransient<ISmtpService, SmtpService>(); 
     services.AddTransient<IJwtService, JwtService>(); 
-    services.AddTransient<IAuthProvider, AuthProvider>(); 
+    services.AddTransient<IAuth, Auth>(); 
 
     services.AddScoped<IUnitOfWork, UnitOfWork>();
     services.AddScoped<IProfilesRepository, ProfilesRepository>();
