@@ -6,7 +6,7 @@ using book_collection.Context;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using book_collection.Helpers.Bcrypt;
-using book_collection.Helpers.Auth;
+using book_collection.Services.Auth;
 using book_collection.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using AutoMapper;

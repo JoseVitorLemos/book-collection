@@ -16,9 +16,10 @@ namespace book_collection.Services
 
     public JwtService(IConfiguration configuration)
     {
-      this._secret = configuration["JWT:secret"];
-      this._expireHours = int.Parse(configuration["JWT:TokenConfiguration:expireHours"]);
-      this._audience = configuration["JWT:TokenConfiguration:audience"];
+      this.Configuration = configuration;
+      this._secret = Configuration["JWT:secret"];
+      this._expireHours = int.Parse(Configuration["JWT:TokenConfiguration:expireHours"]);
+      this._audience = Configuration["JWT:TokenConfiguration:audience"];
     }
     public string GenerateToken(Profiles body)
     {

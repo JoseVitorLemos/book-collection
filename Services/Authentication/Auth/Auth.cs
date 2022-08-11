@@ -2,7 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using book_collection.Interface;
 
-namespace book_collection.Helpers.Auth
+namespace book_collection.Services.Auth
 {
   public class Auth : IAuth
   {

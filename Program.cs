@@ -1,7 +1,7 @@
 using book_collection.Context;
 using book_collection.Services;
+using book_collection.Services.Auth;
 using book_collection.Interface;
-using book_collection.Helpers.Auth;
 using book_collection.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
