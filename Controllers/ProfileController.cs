@@ -5,7 +5,6 @@ using book_collection.Dto;
 using book_collection.Context;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using book_collection.Helpers.Bcrypt;
 using book_collection.Services.Auth;
 using book_collection.Repositories;
 using Microsoft.AspNetCore.Authorization;
@@ -39,71 +38,11 @@ namespace book_collection.Controllers
       this._auth = auth;
     }
 
-    [HttpPost("login")]
-    [AllowAnonymous]
-    public async Task<ActionResult<dynamic>> LoginAsync([FromBody] LoginDto model)
-    {
-      var user = await _unitOfWork.ProfilesRepository.Login(model);
-
-      if (user == null) return NotFound(new { message = "user or password invalid" });
-
-      var validatePassword = Bcrypt.ValidatePassword(model.password, user.password);
-
-      if (!validatePassword) return BadRequest(new { message = "invalid password" });
-
-      var token = _jwtService.GenerateToken(user);
-
-      var image = user.ImageProfiles;
-
-      return new 
-      {
-        user = new {
-          id = user.id,
-          name = user.name,
-           email = user.email,
-           image = image.Count == 0 ? null : image.Single().image_byte
-        },
-        token
-      };
-    }
-
-    [HttpPost("signup")]
-    [AllowAnonymous]
-    public async Task<ActionResult<ResponseProfileDto>> Signup([FromBody] CreateProfileDto model)
-    {
-      try 
-      {
-        var profile = _mapper.Map<Profiles>(model);
-
-        var userExist = await _unitOfWork.ProfilesRepository.OrWhere(profile);
-        Console.WriteLine(userExist);
-
-        if (userExist) 
-          return BadRequest(new { message = "email or cpf already registered" });
-
-        var salt = 12;
-
-        profile.password = Bcrypt.HashPassword(profile.password, salt);
-
-        _unitOfWork.ProfilesRepository.Add(profile);
-        _unitOfWork.Commit();
-
-        await _smtpService.SendEmail(profile.email, "Confirmation email", "Use this link to confirm email");
-
-        return Ok(_mapper.Map<ResponseProfileDto>(model));
-      }
-      catch (Exception e)
-      {
-        Console.WriteLine(e);
-        return StatusCode(StatusCodes.Status500InternalServerError, "error when registering a new profile");
-      }
-    }
-
     [HttpGet("image")]
     public async Task<ActionResult<ImageProfile>> FindImage()
     {
       var imageProfile = await _unitOfWork.ImageProfileRepositoy.GetById(i => i.profilesId == _auth.GetUserId());
-      if(imageProfile == null) return NotFound();
+      if(imageProfile == null) return NoContent();
       return imageProfile;
     }
 
@@ -156,7 +95,7 @@ namespace book_collection.Controllers
       {
         var profile = await _unitOfWork.ProfilesRepository.GetById(p => p.id == _auth.GetUserId());
 
-        if (profile == null) return NotFound(new { message = "Unauthorized invalid id" });
+        if (profile == null) return Unauthorized(new { message = "Unauthorized invalid id" });
 
         if (profileDto.name == null) profileDto.name = profile.name;
         if (profileDto.birth_date == DateTime.Parse("0001-01-01T00:00:00")) profileDto.birth_date = profile.birth_date;

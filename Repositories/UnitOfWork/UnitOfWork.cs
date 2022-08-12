@@ -28,11 +28,11 @@ namespace book_collection.Repositories
       }
     }
 
-    public async void Commit()
+    public void Commit()
     {
       try
       {
-        await _context.SaveChangesAsync();
+        _context.SaveChanges();
       } 
       catch(Exception ex)
       {
@@ -40,9 +40,9 @@ namespace book_collection.Repositories
       }
     }
 
-    public async void Dispose()
+    public void Dispose()
     {
-      await _context.DisposeAsync();
+      _context.Dispose();
     }
   }
 }
