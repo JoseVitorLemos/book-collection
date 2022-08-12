@@ -4,14 +4,12 @@ namespace book_collection.Repositories
 {
   public interface IRepository<T>
   {
-    IQueryable<T> Get();
+    Task<T> GetById(Guid id);
 
-    Task<T> GetById(Expression<Func<T, bool>> predicate);
+    Task<T> CreateAsync(T entity);
 
-    void Add(T entity);
+    Task UpdateAsync(Guid id, T entity);
 
-    void Update(T entity);
-
-    void Delete(T entity);
+    Task DeleteAsync(Guid id);
   }
 }

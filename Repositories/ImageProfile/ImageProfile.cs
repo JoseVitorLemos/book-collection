@@ -6,11 +6,10 @@ namespace book_collection.Repositories
 {
   public class ImageProfileRepositoy : Repository<ImageProfile>, IImageProfileRepositoy
   {
-    private readonly AppDbContext _context;
-
-    public ImageProfileRepositoy(AppDbContext context) : base(context)
+    public ImageProfileRepositoy(AppDbContext context)
     {
       _context = context;
+      _dbSet = context.ImageProfiles;
     }
   }
 }

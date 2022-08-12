@@ -7,6 +7,9 @@ namespace book_collection.Repositories
     IProfilesRepository ProfilesRepository { get; }
     IImageProfileRepositoy ImageProfileRepositoy { get; }
 
-    void Commit();
+    Task CommitAsync();
+    Task RollbackAsync();
+    Task BeginTransactionAsync();
+    void Dispose();
   }
 }

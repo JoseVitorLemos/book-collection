@@ -41,15 +41,12 @@ namespace book_collection.Controllers
 
         profile.password = Bcrypt.HashPassword(profile.password, salt);
 
-        _unitOfWork.ProfilesRepository.Add(profile);
-        _unitOfWork.Commit();
-
-        return Ok(_mapper.Map<ResponseProfileDto>(model));
+        var entity = await _unitOfWork.ProfilesRepository.CreateAsync(profile);
+        return Ok(_mapper.Map<ResponseProfileDto>(entity));
       }
       catch (Exception e)
       {
-        Console.WriteLine(e);
-        return StatusCode(StatusCodes.Status500InternalServerError, "error when registering a new profile");
+        return StatusCode(StatusCodes.Status500InternalServerError, e.Message);
       }
     }
   }

@@ -1,13 +1,17 @@
+using Microsoft.EntityFrameworkCore.Storage;
 using book_collection.Interface;
 using book_collection.Context;
 
 namespace book_collection.Repositories
 {
-  public class UnitOfWork : IUnitOfWork
+  public class UnitOfWork : IUnitOfWork, IDisposable
   {
     public AppDbContext _context; 
+    private IDbContextTransaction _transaction;
+
     private ProfilesRepository _profileRepository;
     private ImageProfileRepositoy _imageProfileRepository;
+
 
     public UnitOfWork(AppDbContext context)
     {
@@ -17,32 +21,38 @@ namespace book_collection.Repositories
     public IProfilesRepository ProfilesRepository {
       get 
       {
-        return _profileRepository = _profileRepository ?? new ProfilesRepository(_context);
+        return _profileRepository ??= new ProfilesRepository(_context);
       }
     }
 
     public IImageProfileRepositoy ImageProfileRepositoy {
       get 
       {
-        return _imageProfileRepository = _imageProfileRepository ?? new ImageProfileRepositoy(_context);
+        return _imageProfileRepository ??= new ImageProfileRepositoy(_context);
       }
     }
 
-    public void Commit()
+    public async Task CommitAsync()
     {
-      try
-      {
-        _context.SaveChanges();
-      } 
-      catch(Exception ex)
-      {
-        Console.WriteLine(ex.Message);
-      }
+      await _transaction.CommitAsync();
+    }
+
+    public async Task RollbackAsync()
+    {
+      await _transaction.RollbackAsync();
+    }
+
+    public async Task BeginTransactionAsync()
+    {
+      _transaction = await _context.Database.BeginTransactionAsync(); 
     }
 
     public void Dispose()
     {
-      _context.Dispose();
+      if (_context != null)
+      {
+        _context.Dispose();
+      }
     }
   }
 }

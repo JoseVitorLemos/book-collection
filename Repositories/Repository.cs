@@ -1,43 +1,48 @@
 using book_collection.Repositories;
 using book_collection.Context;
+using book_collection.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using AutoMapper;
 
 namespace book_collection.Repositories
 {
-  public class Repository<T> : IRepository<T> where T : class
+  public class Repository<T> : IRepository<T> where T : BaseEntity 
   {
-    private readonly AppDbContext _context;
+    protected AppDbContext _context;
+    protected DbSet<T> _dbSet;
 
-    public Repository(AppDbContext context)
+    public async Task<T> GetById(Guid id)
     {
-      _context = context;
+      return await _dbSet.Where(x => x.id == id).SingleOrDefaultAsync();
     }
 
-    public IQueryable<T> Get()
+    public async Task<T> CreateAsync(T entity)
     {
-      return _context.Set<T>().AsNoTracking();
+      _dbSet.Add(entity);
+      await _context.SaveChangesAsync();
+      return entity;
     }
 
-    public async Task<T> GetById(Expression<Func<T, bool>> predicate)
+    public async Task UpdateAsync(Guid id, T entity)
     {
-      return await _context.Set<T>().AsNoTracking().SingleOrDefaultAsync(predicate);
+      var model = await GetById(id);
+      _context.Entry(model).State = EntityState.Modified;
+      _context.Update(entity);
+      await _context.SaveChangesAsync();
+      return;
     }
 
-    public void Add(T entity)
+    public async Task DeleteAsync(Guid id)
     {
-      _context.Set<T>().Add(entity);
-    }
-
-    public void Update(T entity)
-    {
-      _context.Entry(entity).State = EntityState.Modified;
-      _context.Set<T>().Update(entity);
-    }
-
-    public void Delete(T entity)
-    {
-      _context.Set<T>().Remove(entity);
+      var model = await GetById(id);
+      if (model == null)
+      {
+        throw new Exception("user not found");
+      }
+      _context.Remove(model);
+      await _context.SaveChangesAsync();
     }
   }
 }
+
