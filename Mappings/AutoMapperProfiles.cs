@@ -13,6 +13,9 @@ namespace book_collection.Mappings
       CreateMap<ImageProfile, ImageProfileDto>().ReverseMap();
       CreateMap<Profiles, ResponseProfileDto>().ReverseMap();
       CreateMap<PutProfileDto, Profiles>().ReverseMap();
+      CreateMap<ForgotPasswordDto, ResetPassword>().ReverseMap();
+      CreateMap<ResetForgotPasswordDto, Profiles>().ReverseMap();
+      CreateMap<ResetPasswordDto, Profiles>().ReverseMap();
     }
   }
 }

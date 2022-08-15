@@ -6,6 +6,8 @@ namespace book_collection.Repositories
   {
     Task<T> GetById(Guid id);
 
+    Task<T> WhereAsync(Expression<Func<T, bool>> predicate);
+
     Task<T> CreateAsync(T entity);
 
     Task UpdateAsync(Guid id, T entity);

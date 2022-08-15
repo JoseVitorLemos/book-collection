@@ -6,6 +6,7 @@ namespace book_collection.Repositories
   {
     IProfilesRepository ProfilesRepository { get; }
     IImageProfileRepositoy ImageProfileRepositoy { get; }
+    IResetPasswordRepositoy ResetPasswordRepositoy { get; }
 
     Task CommitAsync();
     Task RollbackAsync();

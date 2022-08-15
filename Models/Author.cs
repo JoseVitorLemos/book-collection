@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace book_collection.Models
 {
-  [Table("authors")]
+  [Table("Authors")]
   public class Author : BaseEntity
   {
     [Required]

@@ -6,6 +6,7 @@ using book_collection.Helpers.Bcrypt;
 using book_collection.Services.Auth;
 using System.Security.Claims;
 using book_collection.Repositories;
+using Swashbuckle.AspNetCore.Annotations;
 using AutoMapper;
 
 namespace book_collection.Controllers
@@ -25,6 +26,7 @@ namespace book_collection.Controllers
       _auth = auth;
     }
 
+    [SwaggerOperation(Tags = new[] { "Account" })]
     [HttpPost("signup")]
     public async Task<ActionResult<ResponseProfileDto>> Signup([FromBody] CreateProfileDto model)
     {

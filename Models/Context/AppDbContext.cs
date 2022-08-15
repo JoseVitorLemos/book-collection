@@ -14,5 +14,6 @@ namespace book_collection.Context
     public DbSet<ImageAuthor> ImageAuthors { get; set; }
     public DbSet<ImageBook> ImageBooks { get; set; }
     public DbSet<ImageProfile> ImageProfiles { get; set; }
+    public DbSet<ResetPassword> ResetPasswords { get; set; }
   }
 }

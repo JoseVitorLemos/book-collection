@@ -11,10 +11,16 @@ namespace book_collection.Repositories
   {
     protected AppDbContext _context;
     protected DbSet<T> _dbSet;
+    protected IMapper _mapper;
 
     public async Task<T> GetById(Guid id)
     {
       return await _dbSet.Where(x => x.id == id).SingleOrDefaultAsync();
+    }
+
+    public async Task<T> WhereAsync(Expression<Func<T, bool>> predicate)
+    {
+      return await _dbSet.FirstOrDefaultAsync(predicate);
     }
 
     public async Task<T> CreateAsync(T entity)

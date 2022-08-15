@@ -57,7 +57,10 @@ public class Program
     services.AddScoped<IProfilesRepository, ProfilesRepository>();
 
     services.AddEndpointsApiExplorer();
-    services.AddSwaggerGen();
+
+    services.AddSwaggerGen(c => { 
+      c.EnableAnnotations();
+    });
 
     var app = builder.Build();
 

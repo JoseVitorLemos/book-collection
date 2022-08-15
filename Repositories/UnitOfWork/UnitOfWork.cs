@@ -11,6 +11,7 @@ namespace book_collection.Repositories
 
     private ProfilesRepository _profileRepository;
     private ImageProfileRepositoy _imageProfileRepository;
+    private ResetPasswordRepositoy _resetPassowrdRepository;
 
 
     public UnitOfWork(AppDbContext context)
@@ -29,6 +30,13 @@ namespace book_collection.Repositories
       get 
       {
         return _imageProfileRepository ??= new ImageProfileRepositoy(_context);
+      }
+    }
+
+    public IResetPasswordRepositoy ResetPasswordRepositoy {
+      get 
+      {
+        return _resetPassowrdRepository ??= new ResetPasswordRepositoy(_context);
       }
     }
 
