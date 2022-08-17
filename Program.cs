@@ -1,13 +1,15 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer; 
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi.Models;
 using book_collection.Context;
 using book_collection.Services;
 using book_collection.Services.Auth;
+using book_collection.Models;
 using book_collection.Interface;
 using book_collection.Repositories;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
-using book_collection.Models;
-using Microsoft.AspNetCore.Authentication.JwtBearer; 
-using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
 public class Program
@@ -23,8 +25,6 @@ public class Program
       options.UseMySql(configuration["ConnectionStrings"], new MySqlServerVersion(new Version()));
     });
 
-    var key = Encoding.ASCII.GetBytes(configuration["JWT:secret"]); 
-
     services.AddAuthentication(x =>
     {
       x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -37,10 +37,17 @@ public class Program
       x.TokenValidationParameters = new TokenValidationParameters
       {
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(key),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(configuration["JWT:secret"])),
         ValidateIssuer = false,
         ValidateAudience = false
       };
+    });
+
+    services.AddApiVersioning(options =>
+    {
+      options.AssumeDefaultVersionWhenUnspecified = true;
+      options.DefaultApiVersion = new ApiVersion(1, 0);
+      options.ReportApiVersions = true;
     });
 
     services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies()); 
@@ -57,28 +64,45 @@ public class Program
     services.AddScoped<IProfilesRepository, ProfilesRepository>();
 
     services.AddEndpointsApiExplorer();
-
     services.AddSwaggerGen(c => { 
       c.EnableAnnotations();
+      c.SwaggerDoc("v1", new OpenApiInfo
+      {
+        Version = "v1",
+        Title = "book-collection",
+        Description = "API to provider a library",
+        TermsOfService = new Uri("https://mock.com/terms"),
+        Contact = new OpenApiContact
+        {
+          Name = "José Vitor",
+          Email = "jose81073175@gmail.com",
+          Url = new Uri("https://www.linkedin.com/in/josé-vitor-08188320a/")
+        },
+        License = new OpenApiLicense
+        {
+            Name = "Mock License",
+            Url = new Uri("https://mock.com/license")
+        }
+      });
     });
 
     var app = builder.Build();
 
-    if (app.Environment.IsDevelopment())
+    app.UseAuthentication();
+    app.UseAuthorization();
+
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
     {
-      app.UseSwagger();
-      app.UseSwaggerUI();
-    }
+      c.SwaggerEndpoint("../swagger/v1/swagger.json", "book-collection");
+    });
 
     app.UseHttpsRedirection();
 
-     app.UseCors(c => c
+    app.UseCors(c => c
       .AllowAnyOrigin()
       .AllowAnyMethod()
       .AllowAnyHeader());
-
-    app.UseAuthentication();
-    app.UseAuthorization();
 
     app.MapControllers();
 

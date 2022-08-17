@@ -3,7 +3,6 @@ using book_collection.Context;
 using book_collection.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
-using AutoMapper;
 
 namespace book_collection.Repositories
 {
@@ -11,7 +10,6 @@ namespace book_collection.Repositories
   {
     protected AppDbContext _context;
     protected DbSet<T> _dbSet;
-    protected IMapper _mapper;
 
     public async Task<T> GetById(Guid id)
     {
