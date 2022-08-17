@@ -15,13 +15,14 @@ namespace book_collection.Controllers
   [Authorize]
   [ApiController]
   [Route("[controller]")]
+  [Produces("application/json")]
   public class ProfileController : ControllerBase
   {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly ISmtpService _smtpService;
     private readonly IJwtService _jwtService;
-    private readonly IAuth _auth;
+    private readonly Guid _profileId;
 
     public ProfileController (
       IUnitOfWork unitOfWork,
@@ -35,13 +36,14 @@ namespace book_collection.Controllers
       this._smtpService = smtpHelper;
       this._jwtService = jwtService;
       this._unitOfWork = unitOfWork;
-      this._auth = auth;
+      this._profileId = auth.GetUserId();
     }
 
     [HttpGet("image")]
     public async Task<ActionResult<ImageProfile>> FindImage()
     {
-      var imageProfile = await _unitOfWork.ImageProfileRepositoy.GetById(_auth.GetUserId());
+      var imageProfile = await _unitOfWork.ImageProfileRepositoy
+        .WhereAsync(image => image.profilesId == this._profileId);
       if(imageProfile == null) return NoContent();
       return imageProfile;
     }
@@ -49,7 +51,7 @@ namespace book_collection.Controllers
     [HttpGet]
     public async Task<ActionResult<ResponseProfileDto>> GetProfile()
     {
-      var profile = await _unitOfWork.ProfilesRepository.GetById(_auth.GetUserId());
+      var profile = await _unitOfWork.ProfilesRepository.GetById(this._profileId);
       return _mapper.Map<ResponseProfileDto>(profile);
     }
 
@@ -58,7 +60,8 @@ namespace book_collection.Controllers
     {
       try 
       {
-        var image = await _unitOfWork.ImageProfileRepositoy.GetById(_auth.GetUserId());
+        var image = await _unitOfWork.ImageProfileRepositoy
+          .WhereAsync(image => image.profilesId == this._profileId);
 
         if (image != null) return BadRequest(new { message = "can only one profile image" });
 
@@ -70,7 +73,7 @@ namespace book_collection.Controllers
 
           var imageProfile = _mapper.Map<ImageProfile>(imageProfileDto);
           imageProfile.image_byte = fileBytes;
-          imageProfile.profilesId = _auth.GetUserId();
+          imageProfile.profilesId = this._profileId;
 
           await _unitOfWork.ImageProfileRepositoy.CreateAsync(imageProfile);
         }
@@ -92,7 +95,7 @@ namespace book_collection.Controllers
     {
       try
       {
-        var profile = await _unitOfWork.ProfilesRepository.GetById(_auth.GetUserId());
+        var profile = await _unitOfWork.ProfilesRepository.GetById(this._profileId);
 
         if (profile == null) return Unauthorized(new { message = "Unauthorized invalid id" });
 
@@ -101,7 +104,7 @@ namespace book_collection.Controllers
 
         var profileChanges = _mapper.Map(profileDto, profile);
 
-        await _unitOfWork.ProfilesRepository.UpdateAsync(_auth.GetUserId(), profileChanges);
+        await _unitOfWork.ProfilesRepository.UpdateAsync(this._profileId, profileChanges);
         return Ok("profile changes saved successfully");
       }
       catch (Exception e)
@@ -122,14 +125,15 @@ namespace book_collection.Controllers
           await imageProfileDto.image.CopyToAsync(ms);
           var fileBytes = ms.ToArray();
 
-          var imageProfile = await _unitOfWork.ImageProfileRepositoy.GetById(_auth.GetUserId());
+          var imageProfile = await _unitOfWork.ImageProfileRepositoy
+            .WhereAsync(image => image.profilesId == this._profileId);
 
           if (imageProfile == null) return BadRequest(new { message = "no image registered" });
 
           var imageChange = _mapper.Map(imageProfileDto, imageProfile);
           imageChange.image_byte = fileBytes;
 
-          await _unitOfWork.ImageProfileRepositoy.UpdateAsync(_auth.GetUserId(), imageChange);
+          await _unitOfWork.ImageProfileRepositoy.UpdateAsync(imageProfile.id, imageChange);
         }
         else
         {
