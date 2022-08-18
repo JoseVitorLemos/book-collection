@@ -20,7 +20,7 @@ namespace book_collection.Controllers
     private readonly ISmtpService _smtpService;
     private readonly IMapper _mapper;
     private readonly string _host;
-    private readonly IAuth _auth;
+    private readonly Guid _profileId;
 
     public ForgotPassowrdController(
       IUnitOfWork unitOfWork,
@@ -36,7 +36,7 @@ namespace book_collection.Controllers
       _smtpService = smtpService;
       _mapper = mapper;
       _host = _configuration["Uri"];
-      _auth = auth;
+      _profileId = auth.GetUserId();
     }
 
     [SwaggerOperation(Tags = new[] { "Account" })]
@@ -119,7 +119,7 @@ namespace book_collection.Controllers
     {
       try
       {
-        var entity = await _unitOfWork.ProfilesRepository.GetById(_auth.GetUserId());
+        var entity = await _unitOfWork.ProfilesRepository.GetById(this._profileId);
 
         var validatePassword = Bcrypt.ValidatePassword(resetPassword.oldPassword, entity.password);
         if (!validatePassword) return BadRequest(new { message = "invalid password" });

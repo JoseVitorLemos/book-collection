@@ -1,10 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using book_collection.Models;
 using book_collection.Interface;
 using book_collection.Dto;
 using book_collection.Helpers.Bcrypt;
-using book_collection.Services.Auth;
-using System.Security.Claims;
 using book_collection.Repositories;
 using Swashbuckle.AspNetCore.Annotations;
 using AutoMapper;
@@ -18,17 +15,14 @@ namespace book_collection.Controllers
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IJwtService _jwtService;
-    private readonly IAuth _auth;
 
     public LoginController(
       IMapper mapper,
       IUnitOfWork unitOfWork,
-      IAuth auth,
       IJwtService jwtService)
     {
       _mapper = mapper;
       _unitOfWork = unitOfWork;
-      _auth = auth;
       _jwtService = jwtService;
     }
 
