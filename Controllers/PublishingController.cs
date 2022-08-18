@@ -7,6 +7,7 @@ namespace book_collection.Controllers;
 [ApiController]
 
 [Route("[controller]")]
+[Produces("application/json")]
 public class PublishingController : ControllerBase
 {
   private readonly AppDbContext _context;
