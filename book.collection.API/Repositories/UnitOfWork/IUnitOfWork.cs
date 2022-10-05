@@ -11,6 +11,6 @@ namespace book_collection.Repositories
     Task CommitAsync();
     Task RollbackAsync();
     Task BeginTransactionAsync();
-    void Dispose();
+    ValueTask DisposeAsync();
   }
 }

@@ -4,7 +4,7 @@ using book_collection.Context;
 
 namespace book_collection.Repositories
 {
-  public class UnitOfWork : IUnitOfWork, IDisposable
+  public class UnitOfWork : IUnitOfWork, IAsyncDisposable
   {
     public AppDbContext _context; 
     private IDbContextTransaction _transaction;
@@ -55,11 +55,11 @@ namespace book_collection.Repositories
       _transaction = await _context.Database.BeginTransactionAsync(); 
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
       if (_context != null)
       {
-        _context.Dispose();
+        await _context.DisposeAsync();
       }
     }
   }

@@ -12,7 +12,7 @@ namespace book_collection.Controllers
 {
   [ApiController]
   [Route("account")]
-  public class ForgotPassowrdController : ControllerBase
+  public class AccountPassowrdController : ControllerBase
   {
     private readonly IConfiguration _configuration;
     private readonly IUnitOfWork _unitOfWork;
@@ -22,7 +22,7 @@ namespace book_collection.Controllers
     private readonly string _host;
     private readonly Guid _profileId;
 
-    public ForgotPassowrdController(
+    public AccountPassowrdController(
       IUnitOfWork unitOfWork,
       IJwtService jwtService,
       IConfiguration configuration,
@@ -81,7 +81,7 @@ namespace book_collection.Controllers
 
     [SwaggerOperation(Tags = new[] { "Account" })]
     [HttpPut("recover-forgotten-password/{token}")]
-    public async Task<ActionResult<dynamic>> RecoverForgotPasswordAsync([FromBody] ResetForgotPasswordDto resetPassword, string token)
+    public async Task<ActionResult> RecoverForgotPasswordAsync([FromBody] ResetForgotPasswordDto resetPassword, string token)
     {
       var isValid = _jwtService.ValidateToken(token);
       if (!isValid) return BadRequest(new { message = "invalid or expired token" });
@@ -125,10 +125,9 @@ namespace book_collection.Controllers
         if (!validatePassword) return BadRequest(new { message = "invalid password" });
 
         var salt = 12;
-        var HashPassword = Bcrypt.HashPassword(resetPassword.password, salt);
+        resetPassword.password = Bcrypt.HashPassword(resetPassword.password, salt);
 
         var profile = _mapper.Map(resetPassword, entity);
-        profile.password = HashPassword;
 
         await _unitOfWork.ProfilesRepository.UpdateAsync(profile.id, profile);
         return Ok(new { message = "successful password change" });
